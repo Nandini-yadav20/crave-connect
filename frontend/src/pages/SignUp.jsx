@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -8,38 +8,30 @@ import { setUserData } from "../redux/userSlice";
 
 const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("user");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     email: "",
-    mobile: "",
+    phone: "",
     password: "",
-    role: "user",
+    role: "customer",
   });
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  const primaryColor = "#ff4d2d";
-  const hoverColor = "#e64323";
-  const bgcolor = "#fff9f6";
-  const borderColor = "#ddd";
-
-  // Sync role with formData
-  useEffect(() => {
-    setFormData((prev) => ({ ...prev, role }));
-  }, [role]);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
-    // Clear error when user starts typing
     if (error) setError("");
+  };
+
+  const handleRoleChange = (newRole) => {
+    setFormData({ ...formData, role: newRole });
   };
 
   const handleSubmit = async (e) => {
@@ -48,40 +40,41 @@ const SignUp = () => {
     setLoading(true);
 
     // Validation
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters long");
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
       setLoading(false);
       return;
     }
 
-    if (formData.mobile.length !== 10) {
-      setError("Mobile number must be exactly 10 digits");
+    if (formData.phone.length !== 10) {
+      setError("Phone number must be exactly 10 digits");
       setLoading(false);
       return;
     }
 
     try {
-      console.log("Submitting form data:", formData);
-      
-      const result = await axios.post(
-        `${serverUrl}/api/auth/signup`,
-        formData,  // ✅ Send entire formData object
-        { withCredentials: true }
+      const response = await axios.post(
+        `${serverUrl}/api/auth/register`,
+        formData
       );
 
-      console.log("Signup success:", result.data);
+      if (response.data.success) {
+        // Store token
+        localStorage.setItem('token', response.data.token);
+        
+        // Store user data in Redux
+        dispatch(setUserData(response.data.user));
 
-      // Store user data in Redux
-      if (result.data.user) {
-        dispatch(setUserData(result.data.user));
+        // Navigate based on role
+        const { role } = response.data.user;
+        if (role === 'owner') {
+          navigate('/owner/dashboard');
+        } else if (role === 'delivery') {
+          navigate('/delivery/dashboard');
+        } else {
+          navigate('/restaurants');
+        }
       }
-
-      // Show success message (optional)
-      alert("Account created successfully!");
-
-      // Redirect to home page
-      navigate("/");
-      
     } catch (error) {
       console.error("Signup error:", error);
       const errorMessage = 
@@ -94,17 +87,11 @@ const SignUp = () => {
   };
 
   return (
-    <div
-      className="min-h-screen w-full flex items-center justify-center p-4"
-      style={{ backgroundColor: bgcolor }}
-    >
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-[#fff9f6]">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 border border-gray-200">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1
-            className="text-4xl font-bold mb-2"
-            style={{ color: primaryColor }}
-          >
+          <h1 className="text-4xl font-bold mb-2 text-[#ff4d2d]">
             Crave Connect
           </h1>
           <p className="text-gray-600 text-sm">
@@ -128,12 +115,11 @@ const SignUp = () => {
             </label>
             <input
               type="text"
-              name="fullName"
-              value={formData.fullName}
+              name="name"
+              value={formData.name}
               onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
+              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#ff4d2d] transition"
               placeholder="Enter your full name"
-              style={{ borderColor }}
               required
               disabled={loading}
             />
@@ -149,27 +135,25 @@ const SignUp = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
+              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#ff4d2d] transition"
               placeholder="Enter your email"
-              style={{ borderColor }}
               required
               disabled={loading}
             />
           </div>
 
-          {/* Mobile */}
+          {/* Phone */}
           <div>
             <label className="block text-gray-700 font-medium mb-2 text-sm">
-              Mobile Number
+              Phone Number
             </label>
             <input
               type="tel"
-              name="mobile"
-              value={formData.mobile}
+              name="phone"
+              value={formData.phone}
               onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
-              placeholder="Enter 10-digit mobile number"
-              style={{ borderColor }}
+              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#ff4d2d] transition"
+              placeholder="Enter 10-digit phone number"
               pattern="[0-9]{10}"
               maxLength="10"
               required
@@ -188,10 +172,9 @@ const SignUp = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
-                placeholder="Enter password (min 8 characters)"
-                style={{ borderColor }}
-                minLength="8"
+                className="w-full border rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-[#ff4d2d] transition"
+                placeholder="Enter password (min 6 characters)"
+                minLength="6"
                 required
                 disabled={loading}
               />
@@ -206,30 +189,33 @@ const SignUp = () => {
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Password must be at least 8 characters long
+              Password must be at least 6 characters long
             </p>
           </div>
 
           {/* Role Selection */}
           <div>
             <label className="block text-gray-700 font-medium mb-2 text-sm">
-              Role
+              I want to sign up as
             </label>
             <div className="flex gap-2">
-              {["user", "owner", "deliveryBoy"].map((r) => (
+              {[
+                { value: "customer", label: "Customer" },
+                { value: "owner", label: "Restaurant Owner" },
+                { value: "delivery", label: "Delivery Partner" }
+              ].map((option) => (
                 <button
-                  key={r}
+                  key={option.value}
                   type="button"
-                  onClick={() => setRole(r)}
+                  onClick={() => handleRoleChange(option.value)}
                   disabled={loading}
-                  className="flex-1 border rounded-lg px-3 py-2 font-medium transition capitalize disabled:opacity-50"
-                  style={
-                    role === r
-                      ? { backgroundColor: primaryColor, color: "white" }
-                      : { borderColor, color: "#333" }
-                  }
+                  className={`flex-1 border rounded-lg px-3 py-2 font-medium transition capitalize text-sm disabled:opacity-50 ${
+                    formData.role === option.value
+                      ? 'bg-[#ff4d2d] text-white border-[#ff4d2d]'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-[#ff4d2d]'
+                  }`}
                 >
-                  {r === "deliveryBoy" ? "Delivery" : r}
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -238,14 +224,7 @@ const SignUp = () => {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full text-white font-semibold py-3 rounded-lg transition transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            style={{ backgroundColor: primaryColor }}
-            onMouseEnter={(e) =>
-              !loading && (e.target.style.backgroundColor = hoverColor)
-            }
-            onMouseLeave={(e) =>
-              (e.target.style.backgroundColor = primaryColor)
-            }
+            className="w-full bg-[#ff4d2d] text-white font-semibold py-3 rounded-lg transition transform hover:scale-[1.02] hover:bg-[#e64323] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             disabled={loading}
           >
             {loading ? "Creating Account..." : "Create Account"}
@@ -255,8 +234,7 @@ const SignUp = () => {
           <p className="text-center text-gray-600 text-sm mt-6">
             Already have an account?{" "}
             <span
-              className="font-semibold cursor-pointer hover:underline"
-              style={{ color: primaryColor }}
+              className="font-semibold cursor-pointer hover:underline text-[#ff4d2d]"
               onClick={() => !loading && navigate("/signin")}
             >
               Sign In

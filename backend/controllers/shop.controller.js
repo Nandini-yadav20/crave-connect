@@ -10,7 +10,7 @@ export const createEditShop = async (req, res) => {
     // Upload image if exists
     if (req.file) {
       const uploaded = await uploadCloudinary(req.file.path);
-      image = uploaded.secure_url || uploaded;
+      image = uploaded;
     }
 
     // Find shop by owner
@@ -35,7 +35,7 @@ export const createEditShop = async (req, res) => {
           city,
           state,
           address,
-          ...(image && { image }), // update image only if new one uploaded
+          ...(image && { image }),
         },
         { new: true }
       );
@@ -57,14 +57,25 @@ export const createEditShop = async (req, res) => {
   }
 };
 
-export const getMyShop = async(req,res) =>{
+export const getMyShop = async (req, res) => {
   try {
-    const shop= await Shop.findOne({owner:req.userId}).populate ("owner items")
-    if (!shop ){
-      return null
+    const shop = await Shop.findOne({ owner: req.userId }).populate("owner items");
+    
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        message: "Shop not found"
+      });
     }
-    return res.status(200).json(shop)
+    
+    return res.status(200).json({
+      success: true,
+      shop
+    });
   } catch (error) {
-    return res.status(500).json(error)
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
-}
+};

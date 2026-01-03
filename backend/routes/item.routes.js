@@ -1,12 +1,12 @@
 import express from "express";
 import { addOrEditItem } from "../controllers/item.controller.js";
-import authMiddleware from "../middleware/auth.middleware.js";
-import upload from "../middleware/multer.middleware.js";
+import authMiddleware from "../middlewares/isAuth.js";
+import { upload } from "../middlewares/multer.js";
 
-const router = express.Router();
+const itemRouter = express.Router();
 
 // Add item
-router.post(
+itemRouter.post(
   "/",
   authMiddleware,
   upload.single("image"),
@@ -14,7 +14,7 @@ router.post(
 );
 
 // Edit item
-router.put(
+itemRouter.put(
   "/:itemId",
   authMiddleware,
   upload.single("image"),

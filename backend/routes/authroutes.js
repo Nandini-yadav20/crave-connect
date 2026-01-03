@@ -1,30 +1,25 @@
 import express from "express";
-import { 
-  signup, 
-  signIn, 
-  signOut,
-  sendOtp, 
-  verifyOtp, 
-  resetPassword 
-} from "../controllers/auth.controller.js";
 
 const router = express.Router();
+import protect from "../middlewares/auth.js";
 
-// Authentication routes
-router.post("/signup", signup);
-router.post("/signin", signIn);
+router.post("/login", (req, res) => {
+  res.json({ message: "Login route" });
+});
 
-// Support both GET and POST for signout (for compatibility)
-router.get("/signout", signOut);
-router.post("/signout", signOut);
+router.post("/register", (req, res) => {
+  res.json({ message: "Register route" });
+});
 
-// Alternative logout route (if you prefer this naming)
-router.get("/logout", signOut);
-router.post("/logout", signOut);
 
-// Password reset routes
-router.post("/send-otp", sendOtp);
-router.post("/verify-otp", verifyOtp);
-router.post("/reset-password", resetPassword);
+// GET current logged-in user
+router.get("/me", protect, (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: req.user,
+  });
+});
+
+
 
 export default router;

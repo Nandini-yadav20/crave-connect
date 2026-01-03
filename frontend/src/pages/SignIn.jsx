@@ -21,6 +21,7 @@ function SignIn() {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -30,23 +31,26 @@ function SignIn() {
 
     try {
       const response = await axios.post(
-        `${serverUrl}/api/auth/signin`,
-        formData,
-        {
-          withCredentials: true,
-        }
+        `${serverUrl}/api/auth/login`,
+        formData
       );
 
-      console.log("SignIn Response:", response.data);
-
-      // IMPORTANT: Set user data in Redux immediately after successful signin
-      if (response.data && response.data.user) {
+      if (response.data.success) {
+        // Store token in localStorage
+        localStorage.setItem('token', response.data.token);
+        
+        // Store user data in Redux
         dispatch(setUserData(response.data.user));
         
-        // Navigate to home page
-        navigate("/");
-      } else {
-        setError("Login successful but user data not received");
+        // Navigate based on role
+        const { role } = response.data.user;
+        if (role === 'owner') {
+          navigate('/owner/dashboard');
+        } else if (role === 'delivery') {
+          navigate('/delivery/dashboard');
+        } else {
+          navigate('/restaurants');
+        }
       }
     } catch (error) {
       console.error("SignIn error:", error);
@@ -63,7 +67,7 @@ function SignIn() {
     <div className="min-h-screen flex items-center justify-center bg-[#fff9f6] px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
         <h2 className="text-3xl font-bold text-[#ff4d2d] text-center mb-6">
-          Sign In
+          Sign In to Crave Connect
         </h2>
 
         {error && (
@@ -101,6 +105,15 @@ function SignIn() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff4d2d] focus:border-transparent outline-none"
               placeholder="••••••••"
             />
+          </div>
+
+          <div className="text-right">
+            <span
+              onClick={() => navigate("/forgot-password")}
+              className="text-sm text-[#ff4d2d] cursor-pointer hover:underline"
+            >
+              Forgot Password?
+            </span>
           </div>
 
           <button
